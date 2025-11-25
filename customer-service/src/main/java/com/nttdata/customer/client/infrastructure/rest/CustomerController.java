@@ -68,12 +68,6 @@ public class CustomerController implements CustomersApi {
     }
 
     @Override
-    public Mono<ResponseEntity<CustomerResponse>> getCustomerByIdentification(String identification,
-                                                                               ServerWebExchange exchange) {
-        return Mono.empty();
-    }
-
-    @Override
     public Mono<ResponseEntity<CustomerResponse>> updateCustomer(Long id,
                                                                   Mono<CustomerRequest> customerRequest,
                                                                   ServerWebExchange exchange) {

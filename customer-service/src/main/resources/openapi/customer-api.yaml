@@ -203,40 +203,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/customers/identification/{identification}:
-    get:
-      tags:
-        - customers
-      summary: Get customer by identification
-      description: Returns a specific customer by identification number
-      operationId: getCustomerByIdentification
-      parameters:
-        - name: identification
-          in: path
-          description: Customer identification number
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Customer found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CustomerResponse'
-        '404':
-          description: Customer not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
 components:
   schemas:
     CustomerRequest:
