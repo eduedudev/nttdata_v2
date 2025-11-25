@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '4.0.0'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'org.openapi.generator' version '7.8.0'
 }
 
 group = 'com.nttdata'
@@ -24,6 +25,14 @@ dependencies {
 	implementation 'org.postgresql:r2dbc-postgresql'
 	implementation 'io.projectreactor:reactor-core'
 	
+	// OpenAPI/Swagger
+	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.6.0'
+	
+	// OpenAPI Generator
+	implementation 'org.openapitools:jackson-databind-nullable:0.2.6'
+	implementation 'io.swagger.core.v3:swagger-annotations:2.2.22'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
@@ -42,3 +51,32 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+// OpenAPI Generator Configuration
+openApiGenerate {
+	generatorName = "spring"
+	inputSpec = "$rootDir/src/main/resources/openapi/customer-api.yaml"
+	outputDir = "$buildDir/generated"
+	apiPackage = "com.nttdata.customer.api"
+	modelPackage = "com.nttdata.customer.api.model"
+	configOptions = [
+		reactive: "true",
+		interfaceOnly: "true",
+		skipDefaultInterface: "true",
+		useSpringBoot3: "true",
+		useTags: "true",
+		delegatePattern: "true"
+	]
+}
+
+// Add generated sources to compilation
+sourceSets {
+	main {
+		java {
+			srcDir "$buildDir/generated/src/main/java"
+		}
+	}
+}
+
+// Generate code before compiling
+compileJava.dependsOn tasks.openApiGenerate
