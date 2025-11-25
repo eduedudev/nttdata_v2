@@ -1,0 +1,71 @@
+services:
+  # Base de datos PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    container_name: nttdata-postgres
+    environment:
+      POSTGRES_USER: nttdata
+      POSTGRES_PASSWORD: nttdata123
+      POSTGRES_DB: nttdata_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    networks:
+      - nttdata-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nttdata"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Servicio de Cuentas
+  account-service:
+    build:
+      context: ./account-service
+      dockerfile: Dockerfile
+    container_name: account-service
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_APPLICATION_NAME: account
+      SERVER_PORT: 8080
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/nttdata_db
+      SPRING_R2DBC_USERNAME: nttdata
+      SPRING_R2DBC_PASSWORD: nttdata123
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - nttdata-network
+    restart: unless-stopped
+
+  # Servicio de Clientes
+  customer-service:
+    build:
+      context: ./customer-service
+      dockerfile: Dockerfile
+    container_name: customer-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_APPLICATION_NAME: customer
+      SERVER_PORT: 8081
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/nttdata_db
+      SPRING_R2DBC_USERNAME: nttdata
+      SPRING_R2DBC_PASSWORD: nttdata123
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - nttdata-network
+    restart: unless-stopped
+
+networks:
+  nttdata-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
