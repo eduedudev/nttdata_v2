@@ -460,6 +460,138 @@ class CustomerE2ETest {
         assertThat(countB).isEqualTo(1L);
     }
 
+    @Test
+    @Order(17)
+    void shouldGetAllCustomers() {
+        CustomerRequest request1 = createCustomerRequest("E2E017A", "Customer One");
+        CustomerRequest request2 = createCustomerRequest("E2E017B", "Customer Two");
+        CustomerRequest request3 = createCustomerRequest("E2E017C", "Customer Three");
+
+        webTestClient.post()
+                .uri("/api/v1/customers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request1)
+                .exchange()
+                .expectStatus().isCreated();
+
+        webTestClient.post()
+                .uri("/api/v1/customers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request2)
+                .exchange()
+                .expectStatus().isCreated();
+
+        webTestClient.post()
+                .uri("/api/v1/customers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request3)
+                .exchange()
+                .expectStatus().isCreated();
+
+        webTestClient.get()
+                .uri("/api/v1/customers")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(CustomerResponse.class)
+                .hasSize(3);
+    }
+
+    @Test
+    @Order(18)
+    void shouldReturnEmptyListWhenNoCustomers() {
+        webTestClient.get()
+                .uri("/api/v1/customers")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(CustomerResponse.class)
+                .hasSize(0);
+    }
+
+    @Test
+    @Order(19)
+    void shouldGetCustomersWithPagination() {
+        for (int i = 1; i <= 5; i++) {
+            CustomerRequest request = createCustomerRequest("E2E019" + i, "Customer " + i);
+            webTestClient.post()
+                    .uri("/api/v1/customers")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(request)
+                    .exchange()
+                    .expectStatus().isCreated();
+        }
+
+        webTestClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/v1/customers")
+                        .queryParam("page", 0)
+                        .queryParam("size", 3)
+                        .build())
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(CustomerResponse.class)
+                .hasSize(3);
+    }
+
+    @Test
+    @Order(20)
+    void shouldGetSecondPageOfCustomers() {
+        for (int i = 1; i <= 5; i++) {
+            CustomerRequest request = createCustomerRequest("E2E020" + i, "Customer " + i);
+            webTestClient.post()
+                    .uri("/api/v1/customers")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(request)
+                    .exchange()
+                    .expectStatus().isCreated();
+        }
+
+        webTestClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/v1/customers")
+                        .queryParam("page", 1)
+                        .queryParam("size", 2)
+                        .build())
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(CustomerResponse.class)
+                .hasSize(2);
+    }
+
+    @Test
+    @Order(21)
+    void shouldReturnCustomersWithAllFields() {
+        CustomerRequest request = createCustomerRequest("E2E021", "Full Fields Customer");
+        request.setGender(CustomerRequest.GenderEnum.FEMALE);
+        request.setAddress("456 Full Street");
+        request.setPhone("+573007777777");
+
+        webTestClient.post()
+                .uri("/api/v1/customers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isCreated();
+
+        webTestClient.get()
+                .uri("/api/v1/customers")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(CustomerResponse.class)
+                .value(customers -> {
+                    assertThat(customers).hasSize(1);
+                    CustomerResponse customer = customers.get(0);
+                    assertThat(customer.getName()).isEqualTo("Full Fields Customer");
+                    assertThat(customer.getIdentification()).isEqualTo("E2E021");
+                    assertThat(customer.getGender()).isEqualTo(CustomerResponse.GenderEnum.FEMALE);
+                    assertThat(customer.getAddress()).isEqualTo("456 Full Street");
+                    assertThat(customer.getPhone()).isEqualTo("+573007777777");
+                    assertThat(customer.getStatus()).isTrue();
+                    assertThat(customer.getCustomerId()).isNotNull();
+                    assertThat(customer.getCreatedAt()).isNotNull();
+                    assertThat(customer.getUpdatedAt()).isNotNull();
+                });
+    }
+
     private CustomerRequest createCustomerRequest(String identification, String name) {
         CustomerRequest request = new CustomerRequest();
         request.setName(name);

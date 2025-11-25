@@ -7,6 +7,8 @@ import com.nttdata.customer.client.application.CustomerMapper;
 import com.nttdata.customer.client.application.create_customer.CreateCustomerCommandHandler;
 import com.nttdata.customer.client.application.delete_customer.DeleteCustomerCommand;
 import com.nttdata.customer.client.application.delete_customer.DeleteCustomerCommandHandler;
+import com.nttdata.customer.client.application.get_all_customers.GetAllCustomersQuery;
+import com.nttdata.customer.client.application.get_all_customers.GetAllCustomersQueryHandler;
 import com.nttdata.customer.client.application.update_customer.UpdateCustomerCommandHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,6 +25,7 @@ public class CustomerController implements CustomersApi {
     private final CreateCustomerCommandHandler createCustomerCommandHandler;
     private final UpdateCustomerCommandHandler updateCustomerCommandHandler;
     private final DeleteCustomerCommandHandler deleteCustomerCommandHandler;
+    private final GetAllCustomersQueryHandler getAllCustomersQueryHandler;
     private final CustomerMapper customerMapper;
 
     @Override
@@ -45,7 +48,13 @@ public class CustomerController implements CustomersApi {
     public Mono<ResponseEntity<Flux<CustomerResponse>>> getAllCustomers(Integer page,
                                                                          Integer size,
                                                                          ServerWebExchange exchange) {
-        return Mono.empty();
+        GetAllCustomersQuery query = GetAllCustomersQuery.builder()
+                .page(page)
+                .size(size)
+                .build();
+        Flux<CustomerResponse> customers = getAllCustomersQueryHandler.handle(query)
+                .map(customerMapper::toResponse);
+        return Mono.just(ResponseEntity.ok(customers));
     }
 
     @Override
