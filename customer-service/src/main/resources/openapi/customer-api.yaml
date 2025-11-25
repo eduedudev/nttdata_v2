@@ -1,0 +1,367 @@
+openapi: 3.0.3
+info:
+  title: Customer Service API
+  description: API for customer management and personal data
+  version: 1.0.0
+  contact:
+    name: NTT Data
+    email: support@nttdata.com
+
+servers:
+  - url: http://localhost:8081
+    description: Development server
+
+tags:
+  - name: customers
+    description: Customer related operations
+
+paths:
+  /api/v1/customers:
+    get:
+      tags:
+        - customers
+      summary: Get all customers
+      description: Returns a list of all customers registered in the system
+      operationId: getAllCustomers
+      parameters:
+        - name: page
+          in: query
+          description: Page number
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Page size
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Customer list successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CustomerResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    post:
+      tags:
+        - customers
+      summary: Create a new customer
+      description: Creates a new customer in the system
+      operationId: createCustomer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerRequest'
+      responses:
+        '201':
+          description: Customer successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Customer already exists (duplicate identification)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/customers/{id}:
+    get:
+      tags:
+        - customers
+      summary: Get customer by ID
+      description: Returns a specific customer by ID
+      operationId: getCustomerById
+      parameters:
+        - name: id
+          in: path
+          description: Customer ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Customer found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    put:
+      tags:
+        - customers
+      summary: Update a customer
+      description: Updates an existing customer's data
+      operationId: updateCustomer
+      parameters:
+        - name: id
+          in: path
+          description: Customer ID to update
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerRequest'
+      responses:
+        '200':
+          description: Customer successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    delete:
+      tags:
+        - customers
+      summary: Delete a customer
+      description: Deletes a customer from the system
+      operationId: deleteCustomer
+      parameters:
+        - name: id
+          in: path
+          description: Customer ID to delete
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Customer successfully deleted
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/customers/identification/{identificacion}:
+    get:
+      tags:
+        - customers
+      summary: Get customer by identification
+      description: Returns a specific customer by identification number
+      operationId: getCustomerByIdentification
+      parameters:
+        - name: identificacion
+          in: path
+          description: Customer identification number
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Customer found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    CustomerRequest:
+      type: object
+      required:
+        - nombre
+        - genero
+        - identificacion
+        - direccion
+        - telefono
+        - contrasena
+        - estado
+      properties:
+        nombre:
+          type: string
+          description: Customer full name
+          example: "John Doe"
+          minLength: 3
+          maxLength: 100
+        genero:
+          type: string
+          description: Customer gender
+          enum:
+            - MALE
+            - FEMALE
+            - OTHER
+          example: "MALE"
+        identificacion:
+          type: string
+          description: Unique identification number
+          example: "1234567890"
+          minLength: 5
+          maxLength: 20
+        direccion:
+          type: string
+          description: Customer address
+          example: "123 Main Street"
+          minLength: 5
+          maxLength: 200
+        telefono:
+          type: string
+          description: Customer phone number
+          example: "+573001234567"
+          minLength: 7
+          maxLength: 20
+        contrasena:
+          type: string
+          description: Customer password
+          format: password
+          minLength: 6
+          maxLength: 100
+          example: "password123"
+        estado:
+          type: boolean
+          description: Active/inactive status
+          example: true
+
+    CustomerResponse:
+      type: object
+      properties:
+        clienteId:
+          type: integer
+          format: int64
+          description: Unique customer ID
+          example: 1
+        nombre:
+          type: string
+          description: Customer full name
+          example: "John Doe"
+        genero:
+          type: string
+          description: Customer gender
+          enum:
+            - MALE
+            - FEMALE
+            - OTHER
+          example: "MALE"
+        identificacion:
+          type: string
+          description: Unique identification number
+          example: "1234567890"
+        direccion:
+          type: string
+          description: Customer address
+          example: "123 Main Street"
+        telefono:
+          type: string
+          description: Customer phone number
+          example: "+573001234567"
+        estado:
+          type: boolean
+          description: Active/inactive status
+          example: true
+        fechaCreacion:
+          type: string
+          format: date-time
+          description: Record creation date and time
+          example: "2025-11-24T10:30:00Z"
+        fechaActualizacion:
+          type: string
+          format: date-time
+          description: Last update date and time
+          example: "2025-11-24T10:30:00Z"
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when the error occurred
+          example: "2025-11-24T10:30:00Z"
+        status:
+          type: integer
+          description: HTTP status code
+          example: 400
+        error:
+          type: string
+          description: Error type
+          example: "Bad Request"
+        message:
+          type: string
+          description: Descriptive error message
+          example: "The provided data is not valid"
+        path:
+          type: string
+          description: Endpoint path that generated the error
+          example: "/api/v1/customers"
