@@ -14,37 +14,37 @@ import java.time.OffsetDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("cliente")
+@Table("customer")
 public class CustomerEntity {
 
     @Id
-    @Column("cliente_id")
+    @Column("customer_id")
     private Long customerId;
 
-    @Column("nombre")
+    @Column("name")
     private String name;
 
-    @Column("genero")
+    @Column("gender")
     private String gender;
 
-    @Column("identificacion")
+    @Column("identification")
     private String identification;
 
-    @Column("direccion")
+    @Column("address")
     private String address;
 
-    @Column("telefono")
+    @Column("phone")
     private String phone;
 
-    @Column("contrasena")
+    @Column("password")
     private String password;
 
-    @Column("estado")
+    @Column("status")
     private Boolean status;
 
-    @Column("fecha_creacion")
+    @Column("created_at")
     private OffsetDateTime createdAt;
 
-    @Column("fecha_actualizacion")
+    @Column("updated_at")
     private OffsetDateTime updatedAt;
 }
