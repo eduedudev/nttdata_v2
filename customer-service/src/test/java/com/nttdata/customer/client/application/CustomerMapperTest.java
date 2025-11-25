@@ -3,6 +3,7 @@ package com.nttdata.customer.client.application;
 import com.nttdata.customer.api.model.CustomerRequest;
 import com.nttdata.customer.api.model.CustomerResponse;
 import com.nttdata.customer.client.application.create_customer.CreateCustomerCommand;
+import com.nttdata.customer.client.application.update_customer.UpdateCustomerCommand;
 import com.nttdata.customer.client.domain.Customer;
 import com.nttdata.customer.client.domain.CustomerMother;
 import com.nttdata.customer.client.domain.Gender;
@@ -126,5 +127,52 @@ class CustomerMapperTest {
 
         assertNull(response.getCreatedAt());
         assertNull(response.getUpdatedAt());
+    }
+
+    @Test
+    void shouldMapCustomerRequestToUpdateCommand() {
+        CustomerRequest request = CustomerRequestMother.createDefault();
+        Long customerId = 1L;
+
+        UpdateCustomerCommand command = customerMapper.toUpdateCommand(customerId, request);
+
+        assertNotNull(command);
+        assertEquals(1L, command.getCustomerId());
+        assertEquals("John Doe", command.getName());
+        assertEquals(Gender.MALE, command.getGender());
+        assertEquals("123 Main Street", command.getAddress());
+        assertEquals("+573001234567", command.getPhone());
+        assertEquals("password123", command.getPassword());
+        assertTrue(command.getStatus());
+    }
+
+    @Test
+    void shouldMapUpdateCommandWithDifferentCustomerId() {
+        CustomerRequest request = CustomerRequestMother.createDefault();
+        Long customerId = 99L;
+
+        UpdateCustomerCommand command = customerMapper.toUpdateCommand(customerId, request);
+
+        assertEquals(99L, command.getCustomerId());
+    }
+
+    @Test
+    void shouldMapUpdateCommandWithFemaleGender() {
+        CustomerRequest request = CustomerRequestMother.createFemale();
+        Long customerId = 1L;
+
+        UpdateCustomerCommand command = customerMapper.toUpdateCommand(customerId, request);
+
+        assertEquals(Gender.FEMALE, command.getGender());
+    }
+
+    @Test
+    void shouldMapUpdateCommandWithInactiveStatus() {
+        CustomerRequest request = CustomerRequestMother.createInactive();
+        Long customerId = 1L;
+
+        UpdateCustomerCommand command = customerMapper.toUpdateCommand(customerId, request);
+
+        assertFalse(command.getStatus());
     }
 }

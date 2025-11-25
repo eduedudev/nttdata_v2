@@ -3,6 +3,7 @@ package com.nttdata.customer.client.application;
 import com.nttdata.customer.api.model.CustomerRequest;
 import com.nttdata.customer.api.model.CustomerResponse;
 import com.nttdata.customer.client.application.create_customer.CreateCustomerCommand;
+import com.nttdata.customer.client.application.update_customer.UpdateCustomerCommand;
 import com.nttdata.customer.client.domain.Customer;
 import com.nttdata.customer.client.domain.Gender;
 import org.springframework.stereotype.Component;
@@ -15,6 +16,18 @@ public class CustomerMapper {
                 .name(request.getName())
                 .gender(mapGender(request.getGender()))
                 .identification(request.getIdentification())
+                .address(request.getAddress())
+                .phone(request.getPhone())
+                .password(request.getPassword())
+                .status(request.getStatus())
+                .build();
+    }
+
+    public UpdateCustomerCommand toUpdateCommand(Long customerId, CustomerRequest request) {
+        return UpdateCustomerCommand.builder()
+                .customerId(customerId)
+                .name(request.getName())
+                .gender(mapGender(request.getGender()))
                 .address(request.getAddress())
                 .phone(request.getPhone())
                 .password(request.getPassword())

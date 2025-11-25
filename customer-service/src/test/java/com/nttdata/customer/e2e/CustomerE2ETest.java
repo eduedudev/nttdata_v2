@@ -182,6 +182,186 @@ class CustomerE2ETest {
         assertThat(count).isEqualTo(1L);
     }
 
+    @Test
+    @Order(7)
+    void shouldUpdateCustomerSuccessfully() {
+        CustomerRequest createRequest = createCustomerRequest("E2E007", "Original Name");
+        
+        CustomerResponse created = webTestClient.post()
+                .uri("/api/v1/customers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(createRequest)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(CustomerResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        CustomerRequest updateRequest = createCustomerRequest("E2E007", "Updated Name");
+        updateRequest.setAddress("999 Updated Street");
+        updateRequest.setPhone("+573008888888");
+
+        CustomerResponse updated = webTestClient.put()
+                .uri("/api/v1/customers/{id}", created.getCustomerId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(updateRequest)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(CustomerResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        assertThat(updated).isNotNull();
+        assertThat(updated.getCustomerId()).isEqualTo(created.getCustomerId());
+        assertThat(updated.getName()).isEqualTo("Updated Name");
+        assertThat(updated.getAddress()).isEqualTo("999 Updated Street");
+        assertThat(updated.getPhone()).isEqualTo("+573008888888");
+        assertThat(updated.getIdentification()).isEqualTo("E2E007");
+    }
+
+    @Test
+    @Order(8)
+    void shouldReturnNotFoundWhenUpdatingNonExistentCustomer() {
+        CustomerRequest updateRequest = createCustomerRequest("E2E008", "Non Existent");
+
+        webTestClient.put()
+                .uri("/api/v1/customers/{id}", 999999L)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(updateRequest)
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    @Order(9)
+    void shouldUpdateCustomerGender() {
+        CustomerRequest createRequest = createCustomerRequest("E2E009", "Gender Change");
+        
+        CustomerResponse created = webTestClient.post()
+                .uri("/api/v1/customers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(createRequest)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(CustomerResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        CustomerRequest updateRequest = createCustomerRequest("E2E009", "Gender Change");
+        updateRequest.setGender(CustomerRequest.GenderEnum.FEMALE);
+
+        CustomerResponse updated = webTestClient.put()
+                .uri("/api/v1/customers/{id}", created.getCustomerId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(updateRequest)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(CustomerResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        assertThat(updated).isNotNull();
+        assertThat(updated.getGender()).isEqualTo(CustomerResponse.GenderEnum.FEMALE);
+    }
+
+    @Test
+    @Order(10)
+    void shouldUpdateCustomerToInactive() {
+        CustomerRequest createRequest = createCustomerRequest("E2E010", "Active Customer");
+        
+        CustomerResponse created = webTestClient.post()
+                .uri("/api/v1/customers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(createRequest)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(CustomerResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        assertThat(created.getStatus()).isTrue();
+
+        CustomerRequest updateRequest = createCustomerRequest("E2E010", "Active Customer");
+        updateRequest.setStatus(false);
+
+        CustomerResponse updated = webTestClient.put()
+                .uri("/api/v1/customers/{id}", created.getCustomerId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(updateRequest)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(CustomerResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        assertThat(updated).isNotNull();
+        assertThat(updated.getStatus()).isFalse();
+    }
+
+    @Test
+    @Order(11)
+    void shouldPreserveIdentificationOnUpdate() {
+        CustomerRequest createRequest = createCustomerRequest("E2E011", "Preserve ID");
+        
+        CustomerResponse created = webTestClient.post()
+                .uri("/api/v1/customers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(createRequest)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(CustomerResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        CustomerRequest updateRequest = createCustomerRequest("DIFFERENT_ID", "Preserve ID Updated");
+
+        CustomerResponse updated = webTestClient.put()
+                .uri("/api/v1/customers/{id}", created.getCustomerId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(updateRequest)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(CustomerResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        assertThat(updated).isNotNull();
+        assertThat(updated.getIdentification()).isEqualTo("E2E011");
+    }
+
+    @Test
+    @Order(12)
+    void shouldPersistUpdatedCustomerInDatabase() {
+        CustomerRequest createRequest = createCustomerRequest("E2E012", "Persist Update");
+        
+        CustomerResponse created = webTestClient.post()
+                .uri("/api/v1/customers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(createRequest)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(CustomerResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        CustomerRequest updateRequest = createCustomerRequest("E2E012", "Persist Update Changed");
+        updateRequest.setAddress("Database Updated Street");
+
+        webTestClient.put()
+                .uri("/api/v1/customers/{id}", created.getCustomerId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(updateRequest)
+                .exchange()
+                .expectStatus().isOk();
+
+        String address = databaseClient.sql("SELECT address FROM customer WHERE identification = 'E2E012'")
+                .map(row -> row.get(0, String.class))
+                .one()
+                .block();
+
+        assertThat(address).isEqualTo("Database Updated Street");
+    }
+
     private CustomerRequest createCustomerRequest(String identification, String name) {
         CustomerRequest request = new CustomerRequest();
         request.setName(name);

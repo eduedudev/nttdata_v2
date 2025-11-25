@@ -5,6 +5,7 @@ import com.nttdata.customer.api.model.CustomerRequest;
 import com.nttdata.customer.api.model.CustomerResponse;
 import com.nttdata.customer.client.application.CustomerMapper;
 import com.nttdata.customer.client.application.create_customer.CreateCustomerCommandHandler;
+import com.nttdata.customer.client.application.update_customer.UpdateCustomerCommandHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import reactor.core.publisher.Mono;
 public class CustomerController implements CustomersApi {
 
     private final CreateCustomerCommandHandler createCustomerCommandHandler;
+    private final UpdateCustomerCommandHandler updateCustomerCommandHandler;
     private final CustomerMapper customerMapper;
 
     @Override
@@ -57,6 +59,10 @@ public class CustomerController implements CustomersApi {
     public Mono<ResponseEntity<CustomerResponse>> updateCustomer(Long id,
                                                                   Mono<CustomerRequest> customerRequest,
                                                                   ServerWebExchange exchange) {
-        return Mono.empty();
+        return customerRequest
+                .map(request -> customerMapper.toUpdateCommand(id, request))
+                .flatMap(updateCustomerCommandHandler::handle)
+                .map(customerMapper::toResponse)
+                .map(ResponseEntity::ok);
     }
 }
