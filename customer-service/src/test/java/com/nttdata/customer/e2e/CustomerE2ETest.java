@@ -592,6 +592,106 @@ class CustomerE2ETest {
                 });
     }
 
+    @Test
+    @Order(22)
+    void shouldGetCustomerById() {
+        CustomerRequest request = createCustomerRequest("E2E022", "Get By Id Customer");
+
+        CustomerResponse created = webTestClient.post()
+                .uri("/api/v1/customers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(CustomerResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        CustomerResponse found = webTestClient.get()
+                .uri("/api/v1/customers/{id}", created.getCustomerId())
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(CustomerResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        assertThat(found).isNotNull();
+        assertThat(found.getCustomerId()).isEqualTo(created.getCustomerId());
+        assertThat(found.getName()).isEqualTo("Get By Id Customer");
+        assertThat(found.getIdentification()).isEqualTo("E2E022");
+    }
+
+    @Test
+    @Order(23)
+    void shouldReturnNotFoundWhenCustomerIdDoesNotExist() {
+        webTestClient.get()
+                .uri("/api/v1/customers/{id}", 999999L)
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    @Order(24)
+    void shouldReturnAllFieldsWhenGettingCustomerById() {
+        CustomerRequest request = createCustomerRequest("E2E024", "Full Customer By Id");
+        request.setGender(CustomerRequest.GenderEnum.FEMALE);
+        request.setAddress("789 Full Address");
+        request.setPhone("+573006666666");
+
+        CustomerResponse created = webTestClient.post()
+                .uri("/api/v1/customers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(CustomerResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        webTestClient.get()
+                .uri("/api/v1/customers/{id}", created.getCustomerId())
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(CustomerResponse.class)
+                .value(customer -> {
+                    assertThat(customer.getCustomerId()).isEqualTo(created.getCustomerId());
+                    assertThat(customer.getName()).isEqualTo("Full Customer By Id");
+                    assertThat(customer.getIdentification()).isEqualTo("E2E024");
+                    assertThat(customer.getGender()).isEqualTo(CustomerResponse.GenderEnum.FEMALE);
+                    assertThat(customer.getAddress()).isEqualTo("789 Full Address");
+                    assertThat(customer.getPhone()).isEqualTo("+573006666666");
+                    assertThat(customer.getStatus()).isTrue();
+                    assertThat(customer.getCreatedAt()).isNotNull();
+                    assertThat(customer.getUpdatedAt()).isNotNull();
+                });
+    }
+
+    @Test
+    @Order(25)
+    void shouldGetInactiveCustomerById() {
+        CustomerRequest request = createCustomerRequest("E2E025", "Inactive Customer By Id");
+        request.setStatus(false);
+
+        CustomerResponse created = webTestClient.post()
+                .uri("/api/v1/customers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(CustomerResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        webTestClient.get()
+                .uri("/api/v1/customers/{id}", created.getCustomerId())
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(CustomerResponse.class)
+                .value(customer -> {
+                    assertThat(customer.getStatus()).isFalse();
+                });
+    }
+
     private CustomerRequest createCustomerRequest(String identification, String name) {
         CustomerRequest request = new CustomerRequest();
         request.setName(name);
