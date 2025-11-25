@@ -42,4 +42,13 @@ public class Account {
     public boolean hasInsufficientBalance(BigDecimal amount) {
         return this.currentBalance.compareTo(amount) < 0;
     }
+
+    public Account update(String accountNumber, AccountType accountType, BigDecimal initialBalance, Boolean status) {
+        this.accountNumber = accountNumber;
+        this.accountType = accountType;
+        this.initialBalance = initialBalance;
+        this.status = status;
+        this.updatedAt = OffsetDateTime.now();
+        return this;
+    }
 }
