@@ -1,11 +1,11 @@
 package com.nttdata.account;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
-@Disabled("Disabled until infrastructure layer is complete")
+@ActiveProfiles("test")
 class AccountApplicationTests {
 
 	@Test
