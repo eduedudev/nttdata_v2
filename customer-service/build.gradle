@@ -110,3 +110,45 @@ sourceSets {
 
 // Generate code before compiling
 compileJava.dependsOn tasks.openApiGenerate
+
+// Pitest Mutation Testing Configuration
+configurations {
+	pitest
+}
+
+dependencies {
+	pitest 'org.pitest:pitest-command-line:1.15.3'
+	pitest 'org.pitest:pitest-junit5-plugin:1.2.1'
+}
+
+tasks.register('pitest', JavaExec) {
+	description = 'Run mutation testing with Pitest'
+	group = 'verification'
+	
+	dependsOn test, classes, testClasses
+	
+	mainClass = 'org.pitest.mutationtest.commandline.MutationCoverageReport'
+	classpath = configurations.pitest + sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
+	
+	def pitestReportDir = layout.buildDirectory.dir('reports/pitest').get().asFile
+	
+	args = [
+		'--reportDir', pitestReportDir.absolutePath,
+		'--targetClasses', 'com.nttdata.customer.client.domain.*,com.nttdata.customer.client.application.*',
+		'--targetTests', 'com.nttdata.customer.client.*Test',
+		'--sourceDirs', file('src/main/java').absolutePath,
+		'--threads', '4',
+		'--outputFormats', 'HTML,XML',
+		'--verbose'
+	]
+	
+	doFirst {
+		pitestReportDir.mkdirs()
+		println "Running Pitest mutation testing..."
+		println "Report will be generated at: ${pitestReportDir.absolutePath}"
+	}
+	
+	doLast {
+		println "Pitest report available at: ${pitestReportDir.absolutePath}/index.html"
+	}
+}
