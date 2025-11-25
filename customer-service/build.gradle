@@ -31,7 +31,10 @@ dependencies {
 	// OpenAPI Generator
 	implementation 'org.openapitools:jackson-databind-nullable:0.2.6'
 	implementation 'io.swagger.core.v3:swagger-annotations:2.2.22'
+	implementation 'jakarta.validation:jakarta.validation-api:3.0.2'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+	implementation 'com.fasterxml.jackson.core:jackson-databind'
 	
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'
@@ -55,17 +58,34 @@ tasks.named('test') {
 // OpenAPI Generator Configuration
 openApiGenerate {
 	generatorName = "spring"
-	inputSpec = "$rootDir/src/main/resources/openapi/customer-api.yaml"
-	outputDir = "$buildDir/generated"
+	inputSpec = "$rootDir/src/main/resources/openapi/customer-api.yaml".toString()
+	outputDir = "$buildDir/generated".toString()
 	apiPackage = "com.nttdata.customer.api"
 	modelPackage = "com.nttdata.customer.api.model"
+	invokerPackage = "com.nttdata.customer.api.invoker"
 	configOptions = [
 		reactive: "true",
 		interfaceOnly: "true",
 		skipDefaultInterface: "true",
 		useSpringBoot3: "true",
 		useTags: "true",
-		delegatePattern: "true"
+		delegatePattern: "false",
+		useBeanValidation: "true",
+		performBeanValidation: "true",
+		useOptional: "false",
+		java8: "true",
+		dateLibrary: "java8",
+		serializableModel: "true",
+		hideGenerationTimestamp: "true"
+	]
+	additionalProperties = [
+		openApiNullable: "false"
+	]
+	typeMappings = [
+		DateTime: "java.time.OffsetDateTime"
+	]
+	importMappings = [
+		OffsetDateTime: "java.time.OffsetDateTime"
 	]
 }
 
