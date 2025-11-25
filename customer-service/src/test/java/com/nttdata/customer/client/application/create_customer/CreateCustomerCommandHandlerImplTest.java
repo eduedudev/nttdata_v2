@@ -2,8 +2,10 @@ package com.nttdata.customer.client.application.create_customer;
 
 import com.nttdata.customer.client.domain.Customer;
 import com.nttdata.customer.client.domain.CustomerAlreadyExistsException;
+import com.nttdata.customer.client.domain.CustomerCreatedEvent;
 import com.nttdata.customer.client.domain.CustomerMother;
 import com.nttdata.customer.client.domain.CustomerRepository;
+import com.nttdata.customer.client.domain.DomainEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +25,9 @@ class CreateCustomerCommandHandlerImplTest {
     @Mock
     private CustomerRepository customerRepository;
 
+    @Mock
+    private DomainEventPublisher domainEventPublisher;
+
     @InjectMocks
     private CreateCustomerCommandHandlerImpl createCustomerCommandHandler;
 
@@ -39,6 +44,7 @@ class CreateCustomerCommandHandlerImplTest {
     void shouldCreateCustomerSuccessfully() {
         when(customerRepository.existsByIdentification(anyString())).thenReturn(Mono.just(false));
         when(customerRepository.save(any(Customer.class))).thenReturn(Mono.just(savedCustomer));
+        when(domainEventPublisher.publish(any(CustomerCreatedEvent.class))).thenReturn(Mono.empty());
 
         StepVerifier.create(createCustomerCommandHandler.handle(command))
                 .expectNextMatches(result ->
@@ -49,6 +55,7 @@ class CreateCustomerCommandHandlerImplTest {
 
         verify(customerRepository).existsByIdentification("1234567890");
         verify(customerRepository).save(any(Customer.class));
+        verify(domainEventPublisher).publish(any(CustomerCreatedEvent.class));
     }
 
     @Test
@@ -61,6 +68,25 @@ class CreateCustomerCommandHandlerImplTest {
 
         verify(customerRepository).existsByIdentification("1234567890");
         verify(customerRepository, never()).save(any(Customer.class));
+        verify(domainEventPublisher, never()).publish(any(CustomerCreatedEvent.class));
+    }
+
+    @Test
+    void shouldPublishCustomerCreatedEvent() {
+        when(customerRepository.existsByIdentification(anyString())).thenReturn(Mono.just(false));
+        when(customerRepository.save(any(Customer.class))).thenReturn(Mono.just(savedCustomer));
+        when(domainEventPublisher.publish(any(CustomerCreatedEvent.class))).thenReturn(Mono.empty());
+
+        StepVerifier.create(createCustomerCommandHandler.handle(command))
+                .expectNextCount(1)
+                .verifyComplete();
+
+        verify(domainEventPublisher).publish(argThat(event -> {
+            CustomerCreatedEvent customerEvent = (CustomerCreatedEvent) event;
+            return customerEvent.getEventType().equals("CustomerCreated") &&
+                    customerEvent.getAggregateId().equals("1") &&
+                    customerEvent.getName().equals("John Doe");
+        }));
     }
 
     @Test
@@ -81,6 +107,7 @@ class CreateCustomerCommandHandlerImplTest {
                     .updatedAt(c.getUpdatedAt())
                     .build());
         });
+        when(domainEventPublisher.publish(any(CustomerCreatedEvent.class))).thenReturn(Mono.empty());
 
         StepVerifier.create(createCustomerCommandHandler.handle(command))
                 .expectNextMatches(result ->
@@ -96,6 +123,7 @@ class CreateCustomerCommandHandlerImplTest {
 
         when(customerRepository.existsByIdentification("9999999999")).thenReturn(Mono.just(false));
         when(customerRepository.save(any(Customer.class))).thenReturn(Mono.just(savedCustom));
+        when(domainEventPublisher.publish(any(CustomerCreatedEvent.class))).thenReturn(Mono.empty());
 
         StepVerifier.create(createCustomerCommandHandler.handle(customCommand))
                 .expectNextMatches(result ->
@@ -112,6 +140,7 @@ class CreateCustomerCommandHandlerImplTest {
 
         when(customerRepository.existsByIdentification("0987654321")).thenReturn(Mono.just(false));
         when(customerRepository.save(any(Customer.class))).thenReturn(Mono.just(femaleCustomer));
+        when(domainEventPublisher.publish(any(CustomerCreatedEvent.class))).thenReturn(Mono.empty());
 
         StepVerifier.create(createCustomerCommandHandler.handle(femaleCommand))
                 .expectNextMatches(result ->
@@ -127,6 +156,7 @@ class CreateCustomerCommandHandlerImplTest {
 
         when(customerRepository.existsByIdentification(anyString())).thenReturn(Mono.just(false));
         when(customerRepository.save(any(Customer.class))).thenReturn(Mono.just(inactiveCustomer));
+        when(domainEventPublisher.publish(any(CustomerCreatedEvent.class))).thenReturn(Mono.empty());
 
         StepVerifier.create(createCustomerCommandHandler.handle(inactiveCommand))
                 .expectNextMatches(result -> !result.getStatus())

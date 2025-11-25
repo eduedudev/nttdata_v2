@@ -65,4 +65,12 @@ public class CustomerMother {
                 .updatedAt(null)
                 .build();
     }
+
+    public static Customer random() {
+        return createDefault();
+    }
+
+    public static Customer withId(Long id) {
+        return createWithId(id);
+    }
 }
