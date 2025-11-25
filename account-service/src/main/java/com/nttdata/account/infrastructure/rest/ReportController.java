@@ -11,6 +11,7 @@ import com.nttdata.account.application.get_client_report.GetClientReportQuery;
 import com.nttdata.account.application.get_client_report.GetClientReportQueryHandler;
 import com.nttdata.account.domain.CustomerRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
@@ -24,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 public class ReportController implements ReportsApi {
@@ -38,6 +40,9 @@ public class ReportController implements ReportsApi {
                                                                                     LocalDate endDate,
                                                                                     String format,
                                                                                     ServerWebExchange exchange) {
+        log.info("GET /api/v1/reports - Generating account statement: clientId={}, startDate={}, endDate={}, format={}", 
+                clientId, startDate, endDate, format);
+        
         GetClientReportQuery query = GetClientReportQuery.builder()
                 .clientId(clientId)
                 .startDate(startDate.atStartOfDay().atOffset(ZoneOffset.UTC))
@@ -51,8 +56,26 @@ public class ReportController implements ReportsApi {
                         .collectList()
                         .map(reports -> buildReport(customerInfo, reports, startDate, endDate))
                 )
+                .doOnSuccess(report -> {
+                    if (report != null) {
+                        int accountCount = report.getAccounts() != null ? report.getAccounts().size() : 0;
+                        int totalMovements = report.getAccounts() != null 
+                                ? report.getAccounts().stream()
+                                    .mapToInt(a -> a.getMovements() != null ? a.getMovements().size() : 0)
+                                    .sum() 
+                                : 0;
+                        log.info("Report generated successfully: clientId={}, accounts={}, totalMovements={}", 
+                                clientId, accountCount, totalMovements);
+                    }
+                })
+                .doOnError(error -> log.error("Error generating report for clientId={}: {}", clientId, error.getMessage()))
                 .map(ResponseEntity::ok)
-                .defaultIfEmpty(ResponseEntity.notFound().build());
+                .defaultIfEmpty(ResponseEntity.notFound().build())
+                .doOnSuccess(response -> {
+                    if (response.getStatusCode().value() == 404) {
+                        log.warn("Customer not found for report: clientId={}", clientId);
+                    }
+                });
     }
 
     private AccountStatementReport buildReport(CustomerInfo customerInfo,

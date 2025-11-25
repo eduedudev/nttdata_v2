@@ -13,6 +13,7 @@ import com.nttdata.customer.client.application.get_customer_by_id.GetCustomerByI
 import com.nttdata.customer.client.application.get_customer_by_id.GetCustomerByIdQueryHandler;
 import com.nttdata.customer.client.application.update_customer.UpdateCustomerCommandHandler;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,6 +21,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 public class CustomerController implements CustomersApi {
@@ -34,16 +36,23 @@ public class CustomerController implements CustomersApi {
     @Override
     public Mono<ResponseEntity<CustomerResponse>> createCustomer(Mono<CustomerRequest> customerRequest,
                                                                   ServerWebExchange exchange) {
+        log.info("POST /api/v1/customers - Creating new customer");
         return customerRequest
                 .map(customerMapper::toCommand)
                 .flatMap(createCustomerCommandHandler::handle)
                 .map(customerMapper::toResponse)
+                .doOnSuccess(response -> log.info("Customer created successfully: id={}, name={}", 
+                        response.getCustomerId(), response.getName()))
+                .doOnError(error -> log.error("Error creating customer: {}", error.getMessage()))
                 .map(response -> ResponseEntity.status(HttpStatus.CREATED).body(response));
     }
 
     @Override
     public Mono<ResponseEntity<Void>> deleteCustomer(Long id, ServerWebExchange exchange) {
+        log.info("DELETE /api/v1/customers/{} - Deleting customer", id);
         return deleteCustomerCommandHandler.handle(DeleteCustomerCommand.builder().customerId(id).build())
+                .doOnSuccess(v -> log.info("Customer deleted successfully: id={}", id))
+                .doOnError(error -> log.error("Error deleting customer id={}: {}", id, error.getMessage()))
                 .then(Mono.just(ResponseEntity.noContent().<Void>build()));
     }
 
@@ -51,6 +60,7 @@ public class CustomerController implements CustomersApi {
     public Mono<ResponseEntity<Flux<CustomerResponse>>> getAllCustomers(Integer page,
                                                                          Integer size,
                                                                          ServerWebExchange exchange) {
+        log.info("GET /api/v1/customers - Fetching all customers, page={}, size={}", page, size);
         GetAllCustomersQuery query = GetAllCustomersQuery.builder()
                 .page(page)
                 .size(size)
@@ -62,8 +72,11 @@ public class CustomerController implements CustomersApi {
 
     @Override
     public Mono<ResponseEntity<CustomerResponse>> getCustomerById(Long id, ServerWebExchange exchange) {
+        log.info("GET /api/v1/customers/{} - Fetching customer by id", id);
         return getCustomerByIdQueryHandler.handle(GetCustomerByIdQuery.builder().customerId(id).build())
                 .map(customerMapper::toResponse)
+                .doOnSuccess(response -> log.info("Customer found: id={}, name={}", id, response.getName()))
+                .doOnError(error -> log.warn("Customer not found: id={}", id))
                 .map(ResponseEntity::ok);
     }
 
@@ -71,10 +84,14 @@ public class CustomerController implements CustomersApi {
     public Mono<ResponseEntity<CustomerResponse>> updateCustomer(Long id,
                                                                   Mono<CustomerRequest> customerRequest,
                                                                   ServerWebExchange exchange) {
+        log.info("PUT /api/v1/customers/{} - Updating customer", id);
         return customerRequest
                 .map(request -> customerMapper.toUpdateCommand(id, request))
                 .flatMap(updateCustomerCommandHandler::handle)
                 .map(customerMapper::toResponse)
+                .doOnSuccess(response -> log.info("Customer updated successfully: id={}, name={}", 
+                        response.getCustomerId(), response.getName()))
+                .doOnError(error -> log.error("Error updating customer id={}: {}", id, error.getMessage()))
                 .map(ResponseEntity::ok);
     }
 }

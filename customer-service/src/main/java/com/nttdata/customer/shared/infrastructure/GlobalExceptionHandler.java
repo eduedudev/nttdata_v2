@@ -2,6 +2,7 @@ package com.nttdata.customer.shared.infrastructure;
 
 import com.nttdata.customer.api.model.ErrorResponse;
 import com.nttdata.customer.shared.domain.DomainException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.OffsetDateTime;
 
+@Slf4j
 @RestControllerAdvice
 @Order(2)
 public class GlobalExceptionHandler {
@@ -20,6 +22,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DomainException.class)
     public Mono<ResponseEntity<ErrorResponse>> handleDomainException(DomainException ex,
                                                                       ServerWebExchange exchange) {
+        log.warn("Domain exception: path={}, error={}", 
+                exchange.getRequest().getPath().value(), ex.getMessage());
         ErrorResponse error = buildErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad Request",
@@ -37,6 +41,8 @@ public class GlobalExceptionHandler {
                 .reduce((a, b) -> a + ", " + b)
                 .orElse("Validation failed");
 
+        log.warn("Validation error: path={}, errors={}", 
+                exchange.getRequest().getPath().value(), message);
         ErrorResponse error = buildErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad Request",
@@ -49,6 +55,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public Mono<ResponseEntity<ErrorResponse>> handleGenericException(Exception ex,
                                                                        ServerWebExchange exchange) {
+        log.error("Unexpected error: path={}, error={}", 
+                exchange.getRequest().getPath().value(), ex.getMessage(), ex);
         ErrorResponse error = buildErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Internal Server Error",
