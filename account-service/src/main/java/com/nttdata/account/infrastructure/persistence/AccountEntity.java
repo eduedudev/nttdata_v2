@@ -15,7 +15,7 @@ import java.time.OffsetDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("account")
+@Table("accounts")
 public class AccountEntity {
 
     @Id

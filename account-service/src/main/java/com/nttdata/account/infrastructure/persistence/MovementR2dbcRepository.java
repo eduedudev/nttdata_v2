@@ -16,6 +16,6 @@ public interface MovementR2dbcRepository extends ReactiveCrudRepository<Movement
 
     Mono<MovementEntity> findByMovementIdAndAccountId(Long movementId, Long accountId);
 
-    @Query("SELECT * FROM movement WHERE account_id = :accountId AND date >= :startDate AND date <= :endDate ORDER BY date DESC")
+    @Query("SELECT * FROM movements WHERE account_id = :accountId AND date >= :startDate AND date <= :endDate ORDER BY date DESC")
     Flux<MovementEntity> findByAccountIdAndDateBetween(Long accountId, OffsetDateTime startDate, OffsetDateTime endDate);
 }

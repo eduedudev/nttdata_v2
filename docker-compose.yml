@@ -50,6 +50,7 @@ services:
       POSTGRES_USER: nttdata
       POSTGRES_PASSWORD: nttdata123
       POSTGRES_DB: nttdata_db
+      POSTGRES_MULTIPLE_DATABASES: customer_db,account_db
     ports:
       - "5432:5432"
     volumes:
@@ -74,11 +75,15 @@ services:
     environment:
       SPRING_APPLICATION_NAME: account
       SERVER_PORT: 8080
-      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/nttdata_db
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/account_db
       SPRING_R2DBC_USERNAME: nttdata
       SPRING_R2DBC_PASSWORD: nttdata123
+      SPRING_FLYWAY_URL: jdbc:postgresql://postgres:5432/account_db
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     depends_on:
       postgres:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     networks:
       - nttdata-network
@@ -95,9 +100,10 @@ services:
     environment:
       SPRING_APPLICATION_NAME: customer
       SERVER_PORT: 8081
-      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/nttdata_db
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/customer_db
       SPRING_R2DBC_USERNAME: nttdata
       SPRING_R2DBC_PASSWORD: nttdata123
+      SPRING_FLYWAY_URL: jdbc:postgresql://postgres:5432/customer_db
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     depends_on:
       postgres:

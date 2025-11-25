@@ -91,8 +91,9 @@ public class ReportController implements ReportsApi {
                 accountWithMovements.getMovements().add(detail);
             }
 
-            // Update current balance with the latest available balance
-            if (movementReport.getAvailableBalance() != null) {
+            // Update current balance with the most recent available balance (first in DESC order)
+            // Only set if not already set, since movements are ordered by date DESC
+            if (movementReport.getAvailableBalance() != null && accountWithMovements.getCurrentBalance() == null) {
                 accountWithMovements.setCurrentBalance(movementReport.getAvailableBalance().doubleValue());
             }
         }

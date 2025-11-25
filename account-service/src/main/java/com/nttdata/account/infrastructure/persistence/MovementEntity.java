@@ -15,7 +15,7 @@ import java.time.OffsetDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("movement")
+@Table("movements")
 public class MovementEntity {
 
     @Id

@@ -2,14 +2,13 @@
 -- Account Service Database Schema
 
 -- Customer table (replica from customer-service via Kafka events)
-CREATE TABLE IF NOT EXISTS customers (
+CREATE TABLE IF NOT EXISTS customer (
     customer_id BIGINT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     identification VARCHAR(50) NOT NULL,
     address VARCHAR(500),
     phone VARCHAR(50),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    status BOOLEAN DEFAULT TRUE
 );
 
 -- Account table
@@ -20,7 +19,7 @@ CREATE TABLE IF NOT EXISTS accounts (
     initial_balance DECIMAL(19, 4) NOT NULL DEFAULT 0,
     current_balance DECIMAL(19, 4) NOT NULL DEFAULT 0,
     status BOOLEAN NOT NULL DEFAULT TRUE,
-    customer_id BIGINT NOT NULL REFERENCES customers(customer_id),
+    customer_id BIGINT NOT NULL REFERENCES customer(customer_id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
