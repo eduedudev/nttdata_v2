@@ -203,7 +203,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/customers/identification/{identificacion}:
+  /api/v1/customers/identification/{identification}:
     get:
       tags:
         - customers
@@ -211,7 +211,7 @@ paths:
       description: Returns a specific customer by identification number
       operationId: getCustomerByIdentification
       parameters:
-        - name: identificacion
+        - name: identification
           in: path
           description: Customer identification number
           required: true
@@ -242,21 +242,21 @@ components:
     CustomerRequest:
       type: object
       required:
-        - nombre
-        - genero
-        - identificacion
-        - direccion
-        - telefono
-        - contrasena
-        - estado
+        - name
+        - gender
+        - identification
+        - address
+        - phone
+        - password
+        - status
       properties:
-        nombre:
+        name:
           type: string
           description: Customer full name
           example: "John Doe"
           minLength: 3
           maxLength: 100
-        genero:
+        gender:
           type: string
           description: Customer gender
           enum:
@@ -264,32 +264,32 @@ components:
             - FEMALE
             - OTHER
           example: "MALE"
-        identificacion:
+        identification:
           type: string
           description: Unique identification number
           example: "1234567890"
           minLength: 5
           maxLength: 20
-        direccion:
+        address:
           type: string
           description: Customer address
           example: "123 Main Street"
           minLength: 5
           maxLength: 200
-        telefono:
+        phone:
           type: string
           description: Customer phone number
           example: "+573001234567"
           minLength: 7
           maxLength: 20
-        contrasena:
+        password:
           type: string
           description: Customer password
           format: password
           minLength: 6
           maxLength: 100
           example: "password123"
-        estado:
+        status:
           type: boolean
           description: Active/inactive status
           example: true
@@ -297,16 +297,16 @@ components:
     CustomerResponse:
       type: object
       properties:
-        clienteId:
+        customerId:
           type: integer
           format: int64
           description: Unique customer ID
           example: 1
-        nombre:
+        name:
           type: string
           description: Customer full name
           example: "John Doe"
-        genero:
+        gender:
           type: string
           description: Customer gender
           enum:
@@ -314,28 +314,28 @@ components:
             - FEMALE
             - OTHER
           example: "MALE"
-        identificacion:
+        identification:
           type: string
           description: Unique identification number
           example: "1234567890"
-        direccion:
+        address:
           type: string
           description: Customer address
           example: "123 Main Street"
-        telefono:
+        phone:
           type: string
           description: Customer phone number
           example: "+573001234567"
-        estado:
+        status:
           type: boolean
           description: Active/inactive status
           example: true
-        fechaCreacion:
+        createdAt:
           type: string
           format: date-time
           description: Record creation date and time
           example: "2025-11-24T10:30:00Z"
-        fechaActualizacion:
+        updatedAt:
           type: string
           format: date-time
           description: Last update date and time

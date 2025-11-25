@@ -3,8 +3,8 @@ package com.nttdata.customer.client.infrastructure.rest;
 import com.nttdata.customer.api.CustomersApi;
 import com.nttdata.customer.api.model.CustomerRequest;
 import com.nttdata.customer.api.model.CustomerResponse;
-import com.nttdata.customer.client.application.mapper.CustomerMapper;
-import com.nttdata.customer.client.application.usecase.CreateCustomerUseCase;
+import com.nttdata.customer.client.application.CustomerMapper;
+import com.nttdata.customer.client.application.create_customer.CreateCustomerCommandHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,15 +17,15 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class CustomerController implements CustomersApi {
 
-    private final CreateCustomerUseCase createCustomerUseCase;
+    private final CreateCustomerCommandHandler createCustomerCommandHandler;
     private final CustomerMapper customerMapper;
 
     @Override
     public Mono<ResponseEntity<CustomerResponse>> createCustomer(Mono<CustomerRequest> customerRequest,
                                                                   ServerWebExchange exchange) {
         return customerRequest
-                .map(customerMapper::toDomain)
-                .flatMap(createCustomerUseCase::execute)
+                .map(customerMapper::toCommand)
+                .flatMap(createCustomerCommandHandler::handle)
                 .map(customerMapper::toResponse)
                 .map(response -> ResponseEntity.status(HttpStatus.CREATED).body(response));
     }
@@ -48,7 +48,7 @@ public class CustomerController implements CustomersApi {
     }
 
     @Override
-    public Mono<ResponseEntity<CustomerResponse>> getCustomerByIdentification(String identificacion,
+    public Mono<ResponseEntity<CustomerResponse>> getCustomerByIdentification(String identification,
                                                                                ServerWebExchange exchange) {
         return Mono.empty();
     }
