@@ -5,6 +5,8 @@ import com.nttdata.customer.api.model.CustomerRequest;
 import com.nttdata.customer.api.model.CustomerResponse;
 import com.nttdata.customer.client.application.CustomerMapper;
 import com.nttdata.customer.client.application.create_customer.CreateCustomerCommandHandler;
+import com.nttdata.customer.client.application.delete_customer.DeleteCustomerCommand;
+import com.nttdata.customer.client.application.delete_customer.DeleteCustomerCommandHandler;
 import com.nttdata.customer.client.application.update_customer.UpdateCustomerCommandHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,7 @@ public class CustomerController implements CustomersApi {
 
     private final CreateCustomerCommandHandler createCustomerCommandHandler;
     private final UpdateCustomerCommandHandler updateCustomerCommandHandler;
+    private final DeleteCustomerCommandHandler deleteCustomerCommandHandler;
     private final CustomerMapper customerMapper;
 
     @Override
@@ -34,7 +37,8 @@ public class CustomerController implements CustomersApi {
 
     @Override
     public Mono<ResponseEntity<Void>> deleteCustomer(Long id, ServerWebExchange exchange) {
-        return Mono.empty();
+        return deleteCustomerCommandHandler.handle(DeleteCustomerCommand.builder().customerId(id).build())
+                .then(Mono.just(ResponseEntity.noContent().<Void>build()));
     }
 
     @Override

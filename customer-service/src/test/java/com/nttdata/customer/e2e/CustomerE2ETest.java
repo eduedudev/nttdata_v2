@@ -362,6 +362,104 @@ class CustomerE2ETest {
         assertThat(address).isEqualTo("Database Updated Street");
     }
 
+    @Test
+    @Order(13)
+    void shouldDeleteCustomerSuccessfully() {
+        CustomerRequest createRequest = createCustomerRequest("E2E013", "Delete Me");
+        
+        CustomerResponse created = webTestClient.post()
+                .uri("/api/v1/customers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(createRequest)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(CustomerResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        webTestClient.delete()
+                .uri("/api/v1/customers/{id}", created.getCustomerId())
+                .exchange()
+                .expectStatus().isNoContent();
+    }
+
+    @Test
+    @Order(14)
+    void shouldReturnNotFoundWhenDeletingNonExistentCustomer() {
+        webTestClient.delete()
+                .uri("/api/v1/customers/{id}", 999999L)
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    @Order(15)
+    void shouldRemoveCustomerFromDatabaseOnDelete() {
+        CustomerRequest createRequest = createCustomerRequest("E2E015", "Delete From DB");
+        
+        CustomerResponse created = webTestClient.post()
+                .uri("/api/v1/customers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(createRequest)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(CustomerResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        Long countBefore = databaseClient.sql("SELECT COUNT(*) FROM customer WHERE identification = 'E2E015'")
+                .map(row -> row.get(0, Long.class))
+                .one()
+                .block();
+        assertThat(countBefore).isEqualTo(1L);
+
+        webTestClient.delete()
+                .uri("/api/v1/customers/{id}", created.getCustomerId())
+                .exchange()
+                .expectStatus().isNoContent();
+
+        Long countAfter = databaseClient.sql("SELECT COUNT(*) FROM customer WHERE identification = 'E2E015'")
+                .map(row -> row.get(0, Long.class))
+                .one()
+                .block();
+        assertThat(countAfter).isEqualTo(0L);
+    }
+
+    @Test
+    @Order(16)
+    void shouldNotAffectOtherCustomersOnDelete() {
+        CustomerRequest request1 = createCustomerRequest("E2E016A", "Customer A");
+        CustomerRequest request2 = createCustomerRequest("E2E016B", "Customer B");
+        
+        CustomerResponse customerA = webTestClient.post()
+                .uri("/api/v1/customers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request1)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(CustomerResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        webTestClient.post()
+                .uri("/api/v1/customers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request2)
+                .exchange()
+                .expectStatus().isCreated();
+
+        webTestClient.delete()
+                .uri("/api/v1/customers/{id}", customerA.getCustomerId())
+                .exchange()
+                .expectStatus().isNoContent();
+
+        Long countB = databaseClient.sql("SELECT COUNT(*) FROM customer WHERE identification = 'E2E016B'")
+                .map(row -> row.get(0, Long.class))
+                .one()
+                .block();
+        assertThat(countB).isEqualTo(1L);
+    }
+
     private CustomerRequest createCustomerRequest(String identification, String name) {
         CustomerRequest request = new CustomerRequest();
         request.setName(name);
