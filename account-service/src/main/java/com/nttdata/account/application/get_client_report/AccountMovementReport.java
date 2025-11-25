@@ -12,6 +12,7 @@ import java.time.OffsetDateTime;
 @Builder
 public class AccountMovementReport {
 
+    private final Long accountId;
     private final OffsetDateTime date;
     private final String customerName;
     private final String accountNumber;

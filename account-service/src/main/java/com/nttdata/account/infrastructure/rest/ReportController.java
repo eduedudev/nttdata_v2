@@ -98,6 +98,7 @@ public class ReportController implements ReportsApi {
                 accountNumber,
                 key -> {
                     AccountWithMovements account = new AccountWithMovements();
+                    account.setAccountId(movementReport.getAccountId());
                     account.setAccountNumber(accountNumber);
                     account.setAccountType(accountMapper.mapAccountTypeWithMovements(movementReport.getAccountType()));
                     account.setInitialBalance(movementReport.getInitialBalance() != null 

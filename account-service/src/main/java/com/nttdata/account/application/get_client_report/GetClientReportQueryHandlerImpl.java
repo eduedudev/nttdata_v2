@@ -39,6 +39,7 @@ public class GetClientReportQueryHandlerImpl implements GetClientReportQueryHand
 
     private AccountMovementReport buildReport(Customer customer, Account account, Movement movement) {
         return AccountMovementReport.builder()
+                .accountId(account.getAccountId())
                 .date(movement.getDate())
                 .customerName(customer.getName())
                 .accountNumber(account.getAccountNumber())
