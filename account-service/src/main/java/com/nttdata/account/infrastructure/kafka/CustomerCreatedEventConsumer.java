@@ -15,7 +15,7 @@ public class CustomerCreatedEventConsumer {
 
     private final RegisterCustomerCommandHandler registerCustomerCommandHandler;
 
-    @KafkaListener(topics = "${kafka.topics.customer-created:customer-created}", 
+    @KafkaListener(topics = "${kafka.topics.customer-events:customer-events}", 
                    groupId = "${spring.kafka.consumer.group-id:account-service-group}",
                    containerFactory = "kafkaListenerContainerFactory")
     public void consumeCustomerCreatedEvent(CustomerCreatedEvent event) {

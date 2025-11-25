@@ -15,8 +15,20 @@ public class CustomerRepositoryAdapter implements CustomerRepository {
 
     @Override
     public Mono<Customer> save(Customer customer) {
-        return r2dbcRepository.save(entityMapper.toEntity(customer))
-                .map(entityMapper::toDomain);
+        CustomerEntity entity = entityMapper.toEntity(customer);
+        // If customer has ID and doesn't exist, use explicit insert
+        if (customer.getCustomerId() != null) {
+            return r2dbcRepository.existsById(customer.getCustomerId())
+                    .flatMap(exists -> {
+                        if (exists) {
+                            return r2dbcRepository.save(entity).map(entityMapper::toDomain);
+                        } else {
+                            return r2dbcRepository.insertCustomer(entity)
+                                    .then(Mono.just(customer));
+                        }
+                    });
+        }
+        return r2dbcRepository.save(entity).map(entityMapper::toDomain);
     }
 
     @Override
