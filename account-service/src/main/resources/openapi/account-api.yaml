@@ -8,7 +8,7 @@ info:
     email: support@nttdata.com
 
 servers:
-  - url: http://localhost:8082
+  - url: http://localhost:8080
     description: Development server
 
 tags:
@@ -96,7 +96,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/accounts/{id}:
+  /api/v1/accounts/{accountId}:
     get:
       tags:
         - accounts
@@ -104,7 +104,7 @@ paths:
       description: Returns a specific account by ID
       operationId: getAccountById
       parameters:
-        - name: id
+        - name: accountId
           in: path
           description: Account ID
           required: true
@@ -138,7 +138,7 @@ paths:
       description: Updates an existing account's data
       operationId: updateAccount
       parameters:
-        - name: id
+        - name: accountId
           in: path
           description: Account ID to update
           required: true
@@ -184,7 +184,7 @@ paths:
       description: Deletes an account from the system
       operationId: deleteAccount
       parameters:
-        - name: id
+        - name: accountId
           in: path
           description: Account ID to delete
           required: true
@@ -207,41 +207,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/accounts/number/{numero}:
-    get:
-      tags:
-        - accounts
-      summary: Get account by number
-      description: Returns a specific account by account number
-      operationId: getAccountByNumber
-      parameters:
-        - name: numero
-          in: path
-          description: Account number
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Account found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccountResponse'
-        '404':
-          description: Account not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /api/v1/accounts/customer/{clienteId}:
+  /api/v1/accounts/customer/{customerId}:
     get:
       tags:
         - accounts
@@ -249,7 +215,7 @@ paths:
       description: Returns all accounts associated with a specific customer
       operationId: getAccountsByCustomerId
       parameters:
-        - name: clienteId
+        - name: customerId
           in: path
           description: Customer ID
           required: true
@@ -272,14 +238,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/movements:
+  /api/v1/accounts/{accountId}/movements:
     get:
       tags:
         - movements
-      summary: Get all movements
-      description: Returns a list of all registered movements
-      operationId: getAllMovements
+      summary: Get movements by account
+      description: Returns all movements associated with a specific account
+      operationId: getMovementsByAccountId
       parameters:
+        - name: accountId
+          in: path
+          description: Account ID
+          required: true
+          schema:
+            type: integer
+            format: int64
         - name: page
           in: query
           description: Page number
@@ -296,13 +269,19 @@ paths:
             default: 20
       responses:
         '200':
-          description: Movement list successfully retrieved
+          description: Account movements successfully retrieved
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/MovementResponse'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Internal server error
           content:
@@ -316,11 +295,19 @@ paths:
       summary: Register a new movement
       description: |
         Registers a new movement in a bank account.
-        - The value must be greater than zero
+        - The amount must be greater than zero
         - DEBIT movements are subtracted from the available balance
         - CREDIT movements are added to the available balance
-        - If there is insufficient balance, returns error "Insufficient balance"
+        - If there is insufficient balance for a debit, returns error "Insufficient balance"
       operationId: createMovement
+      parameters:
+        - name: accountId
+          in: path
+          description: Account ID
+          required: true
+          schema:
+            type: integer
+            format: int64
       requestBody:
         required: true
         content:
@@ -346,15 +333,15 @@ paths:
                     timestamp: "2025-11-24T10:30:00Z"
                     status: 400
                     error: "Bad Request"
-                    message: "The movement value must be greater than zero"
-                    path: "/api/v1/movements"
+                    message: "The movement amount must be greater than zero"
+                    path: "/api/v1/accounts/1/movements"
                 insufficientBalance:
                   value:
                     timestamp: "2025-11-24T10:30:00Z"
                     status: 400
                     error: "Bad Request"
                     message: "Insufficient balance"
-                    path: "/api/v1/movements"
+                    path: "/api/v1/accounts/1/movements"
         '404':
           description: Account not found
           content:
@@ -368,7 +355,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/movements/{id}:
+  /api/v1/accounts/{accountId}/movements/{movementId}:
     get:
       tags:
         - movements
@@ -376,7 +363,14 @@ paths:
       description: Returns a specific movement by ID
       operationId: getMovementById
       parameters:
-        - name: id
+        - name: accountId
+          in: path
+          description: Account ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: movementId
           in: path
           description: Movement ID
           required: true
@@ -391,53 +385,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/MovementResponse'
         '404':
-          description: Movement not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-    
-    put:
-      tags:
-        - movements
-      summary: Update a movement
-      description: Updates an existing movement's data
-      operationId: updateMovement
-      parameters:
-        - name: id
-          in: path
-          description: Movement ID to update
-          required: true
-          schema:
-            type: integer
-            format: int64
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/MovementRequest'
-      responses:
-        '200':
-          description: Movement successfully updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MovementResponse'
-        '400':
-          description: Invalid input data
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Movement not found
+          description: Movement or account not found
           content:
             application/json:
               schema:
@@ -453,10 +401,17 @@ paths:
       tags:
         - movements
       summary: Delete a movement
-      description: Deletes a movement from the system
+      description: Deletes a movement from the system (reverses the balance change)
       operationId: deleteMovement
       parameters:
-        - name: id
+        - name: accountId
+          in: path
+          description: Account ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: movementId
           in: path
           description: Movement ID to delete
           required: true
@@ -467,42 +422,11 @@ paths:
         '204':
           description: Movement successfully deleted
         '404':
-          description: Movement not found
+          description: Movement or account not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /api/v1/movements/account/{cuentaId}:
-    get:
-      tags:
-        - movements
-      summary: Get movements by account
-      description: Returns all movements associated with a specific account
-      operationId: getMovementsByAccountId
-      parameters:
-        - name: cuentaId
-          in: path
-          description: Account ID
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: Account movements successfully retrieved
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/MovementResponse'
         '500':
           description: Internal server error
           content:
@@ -593,36 +517,36 @@ components:
     AccountRequest:
       type: object
       required:
-        - numero
-        - tipo
-        - saldoInicial
-        - estado
-        - clienteId
+        - accountNumber
+        - accountType
+        - initialBalance
+        - status
+        - customerId
       properties:
-        numero:
+        accountNumber:
           type: string
           description: Unique account number
           example: "1234567890"
           minLength: 5
           maxLength: 20
-        tipo:
+        accountType:
           type: string
           description: Account type
           enum:
             - SAVINGS
             - CHECKING
           example: "SAVINGS"
-        saldoInicial:
+        initialBalance:
           type: number
           format: double
           description: Initial account balance
           example: 1000.00
           minimum: 0
-        estado:
+        status:
           type: boolean
           description: Active/inactive status
           example: true
-        clienteId:
+        customerId:
           type: integer
           format: int64
           description: Customer ID who owns the account
@@ -631,47 +555,47 @@ components:
     AccountResponse:
       type: object
       properties:
-        cuentaId:
+        accountId:
           type: integer
           format: int64
           description: Unique account ID
           example: 1
-        numero:
+        accountNumber:
           type: string
           description: Unique account number
           example: "1234567890"
-        tipo:
+        accountType:
           type: string
           description: Account type
           enum:
             - SAVINGS
             - CHECKING
           example: "SAVINGS"
-        saldoInicial:
+        initialBalance:
           type: number
           format: double
           description: Initial account balance
           example: 1000.00
-        saldoActual:
+        currentBalance:
           type: number
           format: double
           description: Current account balance
           example: 1500.00
-        estado:
+        status:
           type: boolean
           description: Active/inactive status
           example: true
-        clienteId:
+        customerId:
           type: integer
           format: int64
           description: Customer ID who owns the account
           example: 1
-        fechaCreacion:
+        createdAt:
           type: string
           format: date-time
           description: Account creation date and time
           example: "2025-11-24T10:30:00Z"
-        fechaActualizacion:
+        updatedAt:
           type: string
           format: date-time
           description: Last update date and time
@@ -680,29 +604,23 @@ components:
     MovementRequest:
       type: object
       required:
-        - tipo
-        - valor
-        - cuentaId
+        - movementType
+        - amount
       properties:
-        tipo:
+        movementType:
           type: string
           description: Movement type
           enum:
             - CREDIT
             - DEBIT
           example: "CREDIT"
-        valor:
+        amount:
           type: number
           format: double
-          description: Movement value (must be greater than zero)
+          description: Movement amount (must be greater than zero)
           example: 100.00
           minimum: 0.01
-        cuentaId:
-          type: integer
-          format: int64
-          description: Associated account ID
-          example: 1
-        descripcion:
+        description:
           type: string
           description: Optional movement description
           example: "Cash deposit"
@@ -711,43 +629,43 @@ components:
     MovementResponse:
       type: object
       properties:
-        movimientoId:
+        movementId:
           type: integer
           format: int64
           description: Unique movement ID
           example: 1
-        fecha:
+        date:
           type: string
           format: date-time
           description: Movement date and time
           example: "2025-11-24T10:30:00Z"
-        tipo:
+        movementType:
           type: string
           description: Movement type
           enum:
             - CREDIT
             - DEBIT
           example: "CREDIT"
-        valor:
+        amount:
           type: number
           format: double
-          description: Movement value
+          description: Movement amount
           example: 100.00
-        saldo:
+        balance:
           type: number
           format: double
           description: Account balance after the movement
           example: 1100.00
-        cuentaId:
+        accountId:
           type: integer
           format: int64
           description: Associated account ID
           example: 1
-        numeroCuenta:
+        accountNumber:
           type: string
           description: Associated account number
           example: "1234567890"
-        descripcion:
+        description:
           type: string
           description: Movement description
           example: "Cash deposit"
@@ -755,50 +673,50 @@ components:
     AccountStatementReport:
       type: object
       properties:
-        cliente:
-          $ref: '#/components/schemas/ClientInfo'
-        fechaInicio:
+        customer:
+          $ref: '#/components/schemas/CustomerInfo'
+        startDate:
           type: string
           format: date
           description: Report start date
           example: "2025-01-01"
-        fechaFin:
+        endDate:
           type: string
           format: date
           description: Report end date
           example: "2025-11-24"
-        fechaGeneracion:
+        generatedAt:
           type: string
           format: date-time
           description: Report generation date and time
           example: "2025-11-24T10:30:00Z"
-        cuentas:
+        accounts:
           type: array
           description: List of customer accounts with their movements
           items:
             $ref: '#/components/schemas/AccountWithMovements'
 
-    ClientInfo:
+    CustomerInfo:
       type: object
       properties:
-        clienteId:
+        customerId:
           type: integer
           format: int64
           description: Customer ID
           example: 1
-        nombre:
+        name:
           type: string
           description: Customer name
           example: "John Doe"
-        identificacion:
+        identification:
           type: string
           description: Customer identification number
           example: "1234567890"
-        direccion:
+        address:
           type: string
           description: Customer address
           example: "123 Main Street"
-        telefono:
+        phone:
           type: string
           description: Customer phone number
           example: "+573001234567"
@@ -806,37 +724,37 @@ components:
     AccountWithMovements:
       type: object
       properties:
-        cuentaId:
+        accountId:
           type: integer
           format: int64
           description: Account ID
           example: 1
-        numeroCuenta:
+        accountNumber:
           type: string
           description: Account number
           example: "1234567890"
-        tipo:
+        accountType:
           type: string
           description: Account type
           enum:
             - SAVINGS
             - CHECKING
           example: "SAVINGS"
-        saldoInicial:
+        initialBalance:
           type: number
           format: double
           description: Balance at the beginning of the period
           example: 1000.00
-        saldoActual:
+        currentBalance:
           type: number
           format: double
           description: Balance at the end of the period
           example: 1500.00
-        estado:
+        status:
           type: boolean
           description: Account status
           example: true
-        movimientos:
+        movements:
           type: array
           description: List of movements in the specified period
           items:
@@ -845,29 +763,29 @@ components:
     MovementDetail:
       type: object
       properties:
-        fecha:
+        date:
           type: string
           format: date-time
           description: Movement date and time
           example: "2025-11-24T10:30:00Z"
-        tipo:
+        movementType:
           type: string
           description: Movement type
           enum:
             - CREDIT
             - DEBIT
           example: "CREDIT"
-        valor:
+        amount:
           type: number
           format: double
-          description: Movement value
+          description: Movement amount
           example: 100.00
-        saldo:
+        balance:
           type: number
           format: double
           description: Balance after the movement
           example: 1100.00
-        descripcion:
+        description:
           type: string
           description: Movement description
           example: "Cash deposit"
@@ -895,4 +813,4 @@ components:
         path:
           type: string
           description: Endpoint path that generated the error
-          example: "/api/v1/movements"
+          example: "/api/v1/accounts/1/movements"
